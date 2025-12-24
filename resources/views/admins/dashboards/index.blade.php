@@ -62,7 +62,7 @@
 @endsection
 
 @section('scripts')
-    <script src="{{ asset('assets/js/chart.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('perbaikanChart').getContext('2d');
         const perbaikanChart = new Chart(ctx, {

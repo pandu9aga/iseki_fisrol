@@ -14,7 +14,7 @@
                         </p>
                         <p class="m-0 font-weight">
                             Time Patrol 5S:
-                            {{ $patrol->Time_Patrol ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d-m-Y H:i') : '-' }}
+                            {{ $patrol->Time_Patrol ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d-m-Y') : '-' }}
                         </p>
                     </div>
                     <div>
@@ -22,6 +22,12 @@
                             Tambah Temuan
                         </button> --}}
                     </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('temuan.export', $patrol->Id_Patrol) }}" class="btn btn-success">
+                            <i class="fas fa-file-powerpoint me-1"></i> Export ke PPT
+                        </a> {{-- <button class="btn btn-pink">Tambah Temuan</button> --}}
+                    </div>
+
                 </div>
             </div>
             <div class="card-body">

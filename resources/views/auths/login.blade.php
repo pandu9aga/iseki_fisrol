@@ -11,7 +11,7 @@
 
     {{-- Library QR Scanner --}}
     <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
-
+    
     <style>
         .login-container {
             transition: all 0.4s ease;
@@ -200,7 +200,7 @@
             stopScanner();
         });
     </script>
-    {{-- <script src="https://unpkg.com/html5-qrcode"></script> --}}
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const qrDiv = document.createElement('div');

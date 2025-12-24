@@ -1,8 +1,8 @@
 @extends('users.layouts.index')
 
 <!-- Tambahkan CSS TUI di luar <style> -->
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.css  ">
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.css  ">
+<link href="{{ asset('assets/css/tui-image-editor.css') }}" rel="stylesheet">
+<link href="{{ asset('assets/css/tui-color-picker.css') }}" rel="stylesheet">
 
 @section('content')
 <div class="container-fluid">
@@ -263,18 +263,19 @@
 
 @section('script')
 <!-- DataTables -->
-<link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css    ">
-<link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css    ">
-<script src="https://code.jquery.com/jquery-3.7.1.min.js    "></script>
-<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js    "></script>
-<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js    "></script>
+<link href="{{ asset('assets/css/dataTables.dataTables.min.css') }}" rel="stylesheet">
+<link href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
 
-<!-- TUI Image Editor -->
-<script src="https://uicdn.toast.com/tui.code-snippet/latest/tui-code-snippet.js    "></script>
-<script src="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.js    "></script>
-<script src="https://uicdn.toast.com/fabric/dist/fabric.js    "></script>
-<script src="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.js    "></script>
+{{-- JS --}}
+<script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
 
+<script src="{{ asset('assets/js/dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/js/dataTables.bootstrap5.min.js') }}"></script>
+
+<script src="{{ asset('assets/js/tui-code-snippet.js') }}"></script>
+<script src="{{ asset('assets/js/tui-color-picker.js') }}"></script>
+<script src="{{ asset('assets/js/fabric.min.js') }}"></script>
+<script src="{{ asset('assets/js/tui-image-editor.js') }}"></script>
 <script>
     $(document).ready(function() {
         let tuiEditor = null;
@@ -356,7 +357,7 @@
                 tuiEditor.addShape('rect', {
                     stroke: '#ff9900',
                     fill: 'transparent',
-                    strokeWidth: 2,
+                    strokeWidth: 6,
                     width: 200,
                     height: 100,
                     left: canvas.getWidth() / 2,
