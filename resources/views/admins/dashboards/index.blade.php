@@ -35,7 +35,7 @@
                         <h6 class="m-0 font-weight-bold text-primary">Daftar Patrol</h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-bordered">
+                        <table class="table table-bordered datatable" id="datatable" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
                                     <th>No</th>

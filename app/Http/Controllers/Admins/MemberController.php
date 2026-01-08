@@ -27,7 +27,7 @@ class MemberController extends Controller
         $page = "member";
 
         // Ambil semua member dengan relasi division
-        $members = Member::with('division')->get();
+        $members = Member::with('division')->whereNull('deleted_at')->orderBy('nik')->get();
 
         // Kirim data ke view
         return view('admins.members.index', compact('page', 'user', 'members'));

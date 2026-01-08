@@ -80,14 +80,12 @@
         <div class="card shadow mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="m-0">Data Member</h4>
-                <input type="text" id="searchInput" class="form-control form-control-sm w-25"
-                    placeholder="Cari nama member...">
             </div>
 
             <!-- Body -->
             <div class="card-body">
                 <div class="table-container">
-                    <table id="memberTable" class="table table-bordered table-striped table-hover align-middle">
+                    <table id="datatable" class="table table-bordered datatable table-striped table-hover align-middle">
                         <thead class="text-center">
                             <tr>
                                 <th>No</th>

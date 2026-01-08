@@ -20,14 +20,14 @@
                         {{ $patrol->Time_Patrol ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d-m-Y ') : '-' }}
                     </p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTemuanModal">
-                    <i class="fas fa-plus me-1"></i> Tambah Temuan
-                </button>
             </div>
+            <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addTemuanModal">
+                <i class="fas fa-plus me-1"></i> Tambah Temuan
+            </button>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="example" class="table table-borderless mb-0" style="font-size: 0.95rem; width: 100%;">
+                <table id="example" class="table table-bordered datatable" style="font-size: 0.95rem; width: 100%;">
                     <thead class="bg-light-pink text-pink">
                         <tr>
                             <th class="py-3 px-4">No</th>
@@ -114,7 +114,7 @@
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-pink d-none" id="finalSaveTemuanBtn">Simpan Temuan</button>
+                <button type="button" class="btn btn-primary d-none" id="finalSaveTemuanBtn">Simpan Temuan</button>
             </div>
         </div>
     </div>
@@ -588,7 +588,7 @@
         // === DataTable (tetap sama) ===
         if (!$.fn.DataTable.isDataTable('#example')) {
             $('#example').DataTable({
-                "pageLength": 100,
+                "pageLength": -1,
                 "lengthMenu": [
                     [10, 25, 50, 100, -1],
                     [10, 25, 50, 100, "All"]
