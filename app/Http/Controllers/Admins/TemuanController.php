@@ -258,6 +258,190 @@ class TemuanController extends Controller
             return redirect()->back()->with('error', 'Data temuan kosong.');
         }
 
+        $patrol = Patrol::find($id);
+        $patrolName = $patrol->Name_Patrol ?? 'Patrol Tidak Bernama';
+
+        $ppt = new PhpPresentation();
+        $slide = $ppt->getActiveSlide();
+        if ($slide) {
+            $ppt->removeSlideByIndex(0);
+        }
+
+        // Warna
+        $colorPrimary = new Color('FF0D3B66');
+        $colorText = new Color('FF2D2D2D');
+        $colorWhite = new Color('FFFFFFFF');
+        $colorBlue = new Color('FF2E5AAB');
+
+        // Path logo
+        $logoPath = public_path('images/logo.png');
+        $logoExists = file_exists($logoPath);
+
+        // ========== JUDUL SLIDE ==========
+        $titleSlide = $ppt->createSlide();
+
+        // Logo di pojok kiri atas
+        if ($logoExists) {
+            $titleSlide->createDrawingShape()
+                ->setName('Logo Header')
+                ->setPath($logoPath)
+                ->setWidth(120)
+                ->setHeight(30)
+                ->setOffsetX(10)
+                ->setOffsetY(10);
+        }
+
+        // Garis atas
+        $top1 = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(12)->setOffsetX(0)->setOffsetY(100);
+        $top1->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+        $top2 = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(4)->setOffsetX(0)->setOffsetY(112);
+        $top2->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+
+        // Judul
+        $title = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(160)->setOffsetX(0)->setOffsetY(150);
+        $title->createTextRun("LAPORAN TEMUAN PATROL 5S")
+            ->getFont()->setSize(50)->setBold(true)->setColor($colorPrimary);
+        $title->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Garis pemisah
+        $div = $titleSlide->createRichTextShape()->setWidth(420)->setHeight(4)->setOffsetX(270)->setOffsetY(320);
+        $div->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+
+        // Subjudul
+        $sub = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(60)->setOffsetX(0)->setOffsetY(340);
+        $sub->createTextRun("Patrol: {$patrolName}")
+            ->getFont()->setSize(28)->setColor($colorPrimary);
+        $sub->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Tanggal dari Time_Patrol (tanpa jam)
+        $tanggalPatrol = $patrol->Time_Patrol
+            ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d-m-Y')
+            : 'Tanggal tidak tersedia';
+        $date = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(40)->setOffsetX(0)->setOffsetY(390);
+        $date->createTextRun("Tanggal: " . $tanggalPatrol)
+            ->getFont()->setSize(18)->setColor($colorText);
+        $date->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Garis bawah
+        $bot1 = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(4)->setOffsetX(0)->setOffsetY(510);
+        $bot1->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+        $bot2 = $titleSlide->createRichTextShape()->setWidth(960)->setHeight(12)->setOffsetX(0)->setOffsetY(514);
+        $bot2->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+
+        // ========== SLIDE TEMUAN ==========
+        $slideNumber = 1;
+        foreach ($temuans as $temuan) {
+            $slide = $ppt->createSlide();
+
+            // Nomor slide
+            $num = $slide->createRichTextShape()->setWidth(50)->setHeight(30)->setOffsetX(900)->setOffsetY(10);
+            $num->createTextRun((string)$slideNumber)->getFont()->setBold(true)->setSize(16)->setColor($colorPrimary);
+
+            // Header
+            $header = $slide->createRichTextShape()->setWidth(800)->setHeight(40)->setOffsetX(80)->setOffsetY(50);
+            $header->createTextRun("ITEM TEMUAN PATROL 5S")
+                ->getFont()->setSize(20)->setBold(true)->setColor($colorWhite);
+            $header->getFill()
+                ->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
+                ->setStartColor($colorBlue)
+                ->setEndColor($colorBlue);
+            $header->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // POSISI & UKURAN
+            $xLeft = 50;
+            $xRight = 510;
+            $yImageTop = 160;
+            $maxImageWidth = 450;
+            $maxImageHeight = 230;
+
+            // === GAMBAR KIRI ===
+            if (!empty($temuan->Path_Temuan) && file_exists(public_path('uploads/' . $temuan->Path_Temuan))) {
+                list($w, $h) = @getimagesize(public_path('uploads/' . $temuan->Path_Temuan));
+                if ($w && $h) {
+                    // ✅ PRIORITASKAN LEBAR, TAPI BATASI TINGGI
+                    $imgW = $maxImageWidth;
+                    $imgH = (int)($h * ($imgW / $w));
+                    if ($imgH > $maxImageHeight) {
+                        $imgH = $maxImageHeight;
+                        $imgW = (int)($w * ($imgH / $h));
+                    }
+                    $slide->createDrawingShape()
+                        ->setPath(public_path('uploads/' . $temuan->Path_Temuan))
+                        ->setWidth($imgW)
+                        ->setHeight($imgH)
+                        ->setOffsetX($xLeft + ($maxImageWidth - $imgW) / 2)
+                        ->setOffsetY($yImageTop);
+                }
+            }
+
+            // === PANAH ===
+            $arrow = $slide->createRichTextShape()->setWidth(60)->setHeight(40)->setOffsetX(470)->setOffsetY($yImageTop + 90);
+            $arrow->createTextRun("→")->getFont()->setSize(42)->setBold(true)->setColor($colorBlue);
+            $arrow->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // === GAMBAR KANAN ===
+            if (!empty($temuan->Path_Update_Temuan) && file_exists(public_path('uploads/' . $temuan->Path_Update_Temuan))) {
+                list($w2, $h2) = @getimagesize(public_path('uploads/' . $temuan->Path_Update_Temuan));
+                if ($w2 && $h2) {
+                    $imgW2 = $maxImageWidth;
+                    $imgH2 = (int)($h2 * ($imgW2 / $w2));
+                    if ($imgH2 > $maxImageHeight) {
+                        $imgH2 = $maxImageHeight;
+                        $imgW2 = (int)($w2 * ($imgH2 / $h2));
+                    }
+                    $slide->createDrawingShape()
+                        ->setPath(public_path('uploads/' . $temuan->Path_Update_Temuan))
+                        ->setWidth($imgW2)
+                        ->setHeight($imgH2)
+                        ->setOffsetX($xRight + ($maxImageWidth - $imgW2) / 2)
+                        ->setOffsetY($yImageTop);
+                }
+            }
+
+            // === KETERANGAN DI BAWAH ===
+            $labelHeight = 100;
+            $labelY = 540 - $labelHeight - 10; // margin 20 dari bawah
+
+            $desc1 = trim($temuan->Desc_Temuan) ?: 'Tidak ada keterangan temuan';
+            $label1 = $slide->createRichTextShape()->setWidth(400)->setHeight($labelHeight)->setOffsetX($xLeft)->setOffsetY($labelY);
+            $run1 = $label1->createTextRun($desc1);
+            $run1->getFont()->setSize(14)->setBold(true)->setColor($colorWhite);
+            $label1->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $label1->getActiveParagraph()->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $label1->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+
+            $desc2 = trim($temuan->Desc_Update_Temuan) ?: '-';
+            $label2 = $slide->createRichTextShape()->setWidth(400)->setHeight($labelHeight)->setOffsetX($xRight)->setOffsetY($labelY);
+            $run2 = $label2->createTextRun($desc2);
+            $run2->getFont()->setSize(14)->setBold(true)->setColor($colorWhite);
+            $label2->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $label2->getActiveParagraph()->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $label2->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor($colorBlue)->setEndColor($colorBlue);
+
+            // Logo di kiri bawah (slide isi)
+
+            $slideNumber++;
+        }
+
+        // Simpan
+        $fileName = 'Laporan_5S_' . str_replace(' ', '_', $patrolName) . '_' . now()->format('d-m-Y') . '.pptx';
+        $tempFile = sys_get_temp_dir() . '/' . $fileName;
+        $writer = IOFactory::createWriter($ppt, 'PowerPoint2007');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+
+    public function exportToPPTold($id)
+    {
+        $temuans = Temuan::with(['patrol', 'user', 'member'])
+            ->where('Id_Patrol', $id)
+            ->get();
+
+        if ($temuans->isEmpty()) {
+            return redirect()->back()->with('error', 'Data temuan kosong.');
+        }
+
         $ppt = new PhpPresentation();
         $ppt->removeSlideByIndex(0); // hapus slide default
 
