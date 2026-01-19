@@ -200,7 +200,6 @@
             stopScanner();
         });
     </script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const qrDiv = document.createElement('div');
@@ -221,9 +220,11 @@
                 qrDiv.style.display = "block";
                 Html5Qrcode.getCameras().then(devices => {
                     if (devices && devices.length) {
-                        let cameraId = devices[0].id;
+                        const rearCamera = devices.find(c => /back|rear|environment/i.test(c.label));
+                        const camId = rearCamera ? rearCamera.id : devices[0].id;
+
                         html5QrCode.start(
-                            cameraId, {
+                            camId, {
                                 fps: 10,
                                 qrbox: {
                                     width: 250,
