@@ -64,7 +64,7 @@
                         <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
                         <div class="col-lg-6 p-5 login-container">
                             <div class="text-center mb-4">
-                                <h1 class="h4 text-gray-900">Welcome!</h1>
+                                <h1 class="h4 text-gray-900">Patrol 5S</h1>
                             </div>
 
                             {{-- Error message --}}
@@ -92,7 +92,10 @@
                                 @csrf
                                 <div class="form-group">
                                     <input id="nikInput" name="nik" type="text"
-                                        class="form-control form-control-user" placeholder="Masukkan atau Scan NIK">
+                                        class="form-control form-control-user" placeholder="Masukkan NIK">
+                                </div><div class="form-group">
+                                    <input id="passwordInput" name="password" type="password"
+                                        class="form-control form-control-user" placeholder="Masukkan Password">
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-user btn-block">
                                     Login Member
@@ -201,49 +204,49 @@
         });
     </script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const qrDiv = document.createElement('div');
-            qrDiv.id = "reader";
-            qrDiv.style.display = "none";
-            qrDiv.style.marginTop = "10px";
-            document.getElementById("formMember").appendChild(qrDiv);
+        // document.addEventListener("DOMContentLoaded", function() {
+        //     const qrDiv = document.createElement('div');
+        //     qrDiv.id = "reader";
+        //     qrDiv.style.display = "none";
+        //     qrDiv.style.marginTop = "10px";
+        //     document.getElementById("formMember").appendChild(qrDiv);
 
-            const btnScan = document.createElement("button");
-            btnScan.type = "button";
-            btnScan.className = "btn btn-secondary btn-user btn-block mt-2";
-            btnScan.textContent = "Scan Barcode NIK";
-            document.getElementById("formMember").appendChild(btnScan);
+        //     const btnScan = document.createElement("button");
+        //     btnScan.type = "button";
+        //     btnScan.className = "btn btn-secondary btn-user btn-block mt-2";
+        //     btnScan.textContent = "Scan Barcode NIK";
+        //     document.getElementById("formMember").appendChild(btnScan);
 
-            let html5QrCode = new Html5Qrcode("reader");
+        //     let html5QrCode = new Html5Qrcode("reader");
 
-            btnScan.addEventListener("click", function() {
-                qrDiv.style.display = "block";
-                Html5Qrcode.getCameras().then(devices => {
-                    if (devices && devices.length) {
-                        const rearCamera = devices.find(c => /back|rear|environment/i.test(c.label));
-                        const camId = rearCamera ? rearCamera.id : devices[0].id;
+        //     btnScan.addEventListener("click", function() {
+        //         qrDiv.style.display = "block";
+        //         Html5Qrcode.getCameras().then(devices => {
+        //             if (devices && devices.length) {
+        //                 const rearCamera = devices.find(c => /back|rear|environment/i.test(c.label));
+        //                 const camId = rearCamera ? rearCamera.id : devices[0].id;
 
-                        html5QrCode.start(
-                            camId, {
-                                fps: 10,
-                                qrbox: {
-                                    width: 250,
-                                    height: 250
-                                }
-                            },
-                            qrCodeMessage => {
-                                document.querySelector('[name="nik"]').value = qrCodeMessage;
-                                html5QrCode.stop();
-                                qrDiv.style.display = "none";
-                            },
-                            errorMessage => {}
-                        );
-                    }
-                }).catch(err => {
-                    alert("Tidak bisa membuka kamera: " + err);
-                });
-            });
-        });
+        //                 html5QrCode.start(
+        //                     camId, {
+        //                         fps: 10,
+        //                         qrbox: {
+        //                             width: 250,
+        //                             height: 250
+        //                         }
+        //                     },
+        //                     qrCodeMessage => {
+        //                         document.querySelector('[name="nik"]').value = qrCodeMessage;
+        //                         html5QrCode.stop();
+        //                         qrDiv.style.display = "none";
+        //                     },
+        //                     errorMessage => {}
+        //                 );
+        //             }
+        //         }).catch(err => {
+        //             alert("Tidak bisa membuka kamera: " + err);
+        //         });
+        //     });
+        // });
     </script>
 
 </body>

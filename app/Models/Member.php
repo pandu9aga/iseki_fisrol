@@ -19,7 +19,8 @@ class Member extends Model
         'nik',
         'team',
         'division_id',
-        'status'
+        'status',
+        'password'
     ];
 
     public function division()

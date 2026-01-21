@@ -59,13 +59,14 @@ class AuthController extends Controller
     public function login_member(Request $request)
     {
         $request->validate([
-            'nik' => 'required'
+            'nik' => 'required',
+            'password' => 'required'
         ]);
 
         $member = Member::where('nik', $request->nik)->first();
 
-        if (!$member) {
-            return back()->withErrors(['loginError' => 'NIK tidak ditemukan']);
+        if (!$member || $member->password != $request->password) {
+            return back()->withErrors(['loginError' => 'NIK atau password salah']);
         }
 
         session([
