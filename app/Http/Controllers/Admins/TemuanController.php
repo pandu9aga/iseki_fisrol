@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admins;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\Temuan;
 use App\Models\Patrol;
 use App\Models\User;
@@ -29,9 +31,15 @@ class TemuanController extends Controller
             return redirect()->route('login')->withErrors(['unauthorized' => 'Silakan login terlebih dahulu.']);
         }
 
-        $temuans = Temuan::with(['patrol', 'user', 'member'])
-            ->where('Id_Patrol', $id)
-            ->get();
+        $query = Temuan::with(['patrol', 'user', 'member'])
+            ->where('Id_Patrol', $id);
+
+        // Filter by PIC Proses
+        if ($request->has('filter_pic') && !empty($request->filter_pic)) {
+            $query->where('pic_proses_nik', $request->filter_pic);
+        }
+
+        $temuans = $query->get();
 
         $patrol = Patrol::find($id);
         $patrols = Patrol::all();
@@ -43,169 +51,159 @@ class TemuanController extends Controller
 
         $members = Member::whereIn('Id_Member', $patrolmembers)->get();
 
-        return view('admins.temuans.index', compact('temuans', 'patrol', 'patrols', 'users', 'members'));
+        // Get unique PICs for filter dropdown from this patrol
+        $uniquePics = Temuan::where('Id_Patrol', $id)
+            ->whereNotNull('pic_proses_nik')
+            ->where('pic_proses_nik', '!=', '')
+            ->distinct()
+            ->get(['pic_proses_nik']);
+
+        // Attach names
+        foreach ($uniquePics as $p) {
+            $p->pic_name = $p->pic_proses_name ?? $p->pic_proses_nik;
+        }
+
+        return view('admins.temuans.index', compact('temuans', 'patrol', 'patrols', 'users', 'members', 'uniquePics'));
     }
 
-    // Menyimpan temuan baru
+    /**
+     * Search employee by NIK or nama from rifa.employees (AJAX)
+     */
+    public function searchEmployee(Request $request)
+    {
+        $query = $request->input('q', '');
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $employees = DB::connection('rifa')
+            ->table('employees')
+            ->where('nik', 'like', "%{$query}%")
+            ->orWhere('nama', 'like', "%{$query}%")
+            ->limit(20)
+            ->get(['nik', 'nama']);
+
+        return response()->json($employees);
+    }
+
+    /**
+     * Validate NIK and return employee data (AJAX)
+     */
+    public function validateNik(Request $request)
+    {
+        $nik = $request->input('nik', '');
+        if (empty($nik)) {
+            return response()->json(['found' => false]);
+        }
+
+        $employee = DB::connection('rifa')
+            ->table('employees')
+            ->where('nik', $nik)
+            ->first(['nik', 'nama']);
+
+        if ($employee) {
+            return response()->json(['found' => true, 'nik' => $employee->nik, 'nama' => $employee->nama]);
+        }
+
+        return response()->json(['found' => false]);
+    }
+
+    // Menyimpan temuan baru (admin bisa input nik_penemu)
     public function store(Request $request)
     {
         $request->validate([
-            'Path_Temuan' => 'nullable|image|mimes:jpg,png,jpeg',
             'Desc_Temuan' => 'nullable|string',
-            'Id_Patrol'   => 'required|integer'
+            'Id_Patrol'   => 'required|integer',
+            'nik_penemu'  => 'nullable|string|max:50'
         ]);
 
-        $pathTemuan = null;
-
-        if ($request->hasFile('Path_Temuan')) {
-            $file = $request->file('Path_Temuan');
-            $imageInfo = getimagesize($file);
-            $mime = $imageInfo['mime'];
-
-            // buat resource GD sesuai tipe file
-            switch ($mime) {
-                case 'image/jpeg':
-                    $source = imagecreatefromjpeg($file->getPathname());
-                    break;
-                case 'image/png':
-                    $source = imagecreatefrompng($file->getPathname());
-                    break;
-                default:
-                    $source = imagecreatefromstring(file_get_contents($file->getPathname()));
-            }
-
-            $width  = imagesx($source);
-            $height = imagesy($source);
-
-            // resize max dimension 1280px
-            $maxDim = 1280;
-            if ($width > $maxDim || $height > $maxDim) {
-                $ratio = min($maxDim / $width, $maxDim / $height);
-                $newWidth  = intval($width * $ratio);
-                $newHeight = intval($height * $ratio);
-
-                $resized = imagecreatetruecolor($newWidth, $newHeight);
-                imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-                imagedestroy($source);
-                $source = $resized;
-            }
-
-            // pastikan folder ada
-            $folder = public_path('uploads/temuans');
-            if (!file_exists($folder)) {
-                mkdir($folder, 0777, true);
-            }
-
-            // generate nama file unik
-            $filename = uniqid() . '.jpg'; // konversi ke jpg biar ukuran lebih kecil
-            $pathTemuan = 'temuans/' . $filename;
-
-            // kompresi sampai < 1MB
-            $quality = 85;
-            do {
-                ob_start();
-                imagejpeg($source, null, $quality);
-                $data = ob_get_clean();
-                $size = strlen($data);
-                $quality -= 5;
-            } while ($size > 1024 * 1024 && $quality > 10);
-
-            file_put_contents($folder . '/' . $filename, $data);
-            imagedestroy($source);
-        }
+        $pathTemuan = $this->handleImageUpload($request, 'Path_Temuan', 'temuans');
 
         $temuan = Temuan::create([
             'Path_Temuan'   => $pathTemuan,
             'Desc_Temuan'   => $request->input('Desc_Temuan', ''),
             'Id_Patrol'     => $request->input('Id_Patrol'),
             'Id_User'       => Session::get('login_id'),
+            'nik_penemu'    => $request->input('nik_penemu'),
             'Status_Temuan' => 'Pending'
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('temuan.index', ['id' => $request->Id_Patrol])
             ->with('success', 'Data temuan berhasil disimpan.');
     }
 
-    // Update temuan
+    // Update temuan (perbaikan + PIC Proses)
     public function update(Request $request, $id)
     {
         $request->validate([
-            'Path_Update_Temuan' => 'nullable|image|mimes:jpg,png,jpeg',
             'Desc_Update_Temuan' => 'nullable|string',
+            'pic_proses_nik'     => 'required|string|max:50',
         ]);
 
         $temuan = Temuan::findOrFail($id);
 
-        // Upload foto perbaikan jika ada
-        if ($request->hasFile('Path_Update_Temuan')) {
-            $file = $request->file('Path_Update_Temuan');
-            $imageInfo = getimagesize($file);
-            $mime = $imageInfo['mime'];
-
-            // buat resource GD
-            switch ($mime) {
-                case 'image/jpeg':
-                    $source = imagecreatefromjpeg($file->getPathname());
-                    break;
-                case 'image/png':
-                    $source = imagecreatefrompng($file->getPathname());
-                    break;
-                default:
-                    $source = imagecreatefromstring(file_get_contents($file->getPathname()));
+        // Upload foto perbaikan (file upload atau base64)
+        $newPath = $this->handleImageUpload($request, 'Path_Update_Temuan', 'perbaikans');
+        if ($newPath) {
+            // hapus file lama
+            if ($temuan->Path_Update_Temuan && file_exists(public_path('uploads/' . $temuan->Path_Update_Temuan))) {
+                unlink(public_path('uploads/' . $temuan->Path_Update_Temuan));
             }
-
-            $width  = imagesx($source);
-            $height = imagesy($source);
-
-            // resize max 1280px
-            $maxDim = 1280;
-            if ($width > $maxDim || $height > $maxDim) {
-                $ratio = min($maxDim / $width, $maxDim / $height);
-                $newWidth  = intval($width * $ratio);
-                $newHeight = intval($height * $ratio);
-
-                $resized = imagecreatetruecolor($newWidth, $newHeight);
-                imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-                imagedestroy($source);
-                $source = $resized;
-            }
-
-            // pastikan folder ada
-            $folder = public_path('uploads/perbaikans');
-            if (!file_exists($folder)) {
-                mkdir($folder, 0777, true);
-            }
-
-            // hapus file lama kalau ada
-            if ($temuan->Path_Update_Temuan && Storage::disk('uploads')->exists($temuan->Path_Update_Temuan)) {
-                Storage::disk('uploads')->delete($temuan->Path_Update_Temuan);
-            }
-
-            // nama file baru
-            $filename = uniqid() . '.jpg'; 
-            $pathUpdate = 'perbaikans/' . $filename;
-
-            // kompres <= 1MB
-            $quality = 85;
-            do {
-                ob_start();
-                imagejpeg($source, null, $quality);
-                $data = ob_get_clean();
-                $size = strlen($data);
-                $quality -= 5;
-            } while ($size > 1024 * 1024 && $quality > 10);
-
-            file_put_contents($folder . '/' . $filename, $data);
-            imagedestroy($source);
-
-            $temuan->Path_Update_Temuan = $pathUpdate;
+            $temuan->Path_Update_Temuan = $newPath;
         }
 
         // Update deskripsi perbaikan
         $temuan->Desc_Update_Temuan = $request->input('Desc_Update_Temuan', $temuan->Desc_Update_Temuan);
+
+        // Update PIC Proses
+        if ($request->has('pic_proses_nik')) {
+            $temuan->pic_proses_nik = $request->input('pic_proses_nik');
+        }
+
         $temuan->save();
 
         return redirect()->back()->with('success', 'Temuan berhasil diperbarui.');
+    }
+
+    /**
+     * Helper: Handle image upload (file or base64)
+     */
+    private function handleImageUpload(Request $request, $inputName, $subfolder)
+    {
+        $folder = public_path('uploads/' . $subfolder);
+        if (!file_exists($folder)) {
+            mkdir($folder, 0777, true);
+        }
+
+        // 1. Check base64 input
+        if ($request->filled($inputName)) {
+            $input = $request->input($inputName);
+            if (is_string($input) && Str::startsWith($input, 'data:image')) {
+                $data = preg_replace('/^data:image\/\w+;base64,/', '', $input);
+                $binary = base64_decode($data);
+                if ($binary === false) return null;
+
+                $filename = Str::uuid() . '.jpg';
+                file_put_contents($folder . '/' . $filename, $binary);
+                return $subfolder . '/' . $filename;
+            }
+        }
+
+        // 2. Check file upload
+        if ($request->hasFile($inputName)) {
+            $file = $request->file($inputName);
+            $filename = uniqid() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
+
+            // Simply move the file (no GD required)
+            $file->move($folder, $filename);
+            return $subfolder . '/' . $filename;
+        }
+
+        return null;
     }
 
     // Hapus temuan
@@ -247,12 +245,39 @@ class TemuanController extends Controller
         ]);
     }
 
-    // Export temuan ke PPT
-    public function exportToPPT($id)
+    public function updateRotation(Request $request, $id)
     {
-        $temuans = Temuan::with(['patrol', 'user', 'member'])
-            ->where('Id_Patrol', $id)
-            ->get();
+        $temuan = Temuan::findOrFail($id);
+        $type = $request->input('type'); // 'temuan' or 'perbaikan'
+        $angle = $request->input('angle', 0);
+
+        if ($type === 'temuan') {
+            $temuan->Rotate_Temuan = $angle;
+        } elseif ($type === 'perbaikan') {
+            $temuan->Rotate_Update = $angle;
+        }
+
+        $temuan->save();
+
+        return response()->json([
+            'success' => true,
+            'type' => $type,
+            'angle' => $angle
+        ]);
+    }
+
+    // Export temuan ke PPT
+    public function exportToPPT(Request $request, $id)
+    {
+        $query = Temuan::with(['patrol', 'user', 'member'])
+            ->where('Id_Patrol', $id);
+
+        // Filter by PIC Proses
+        if ($request->has('filter_pic') && !empty($request->filter_pic)) {
+            $query->where('pic_proses_nik', $request->filter_pic);
+        }
+
+        $temuans = $query->get();
 
         if ($temuans->isEmpty()) {
             return redirect()->back()->with('error', 'Data temuan kosong.');
@@ -334,8 +359,9 @@ class TemuanController extends Controller
             $slide = $ppt->createSlide();
 
             // Nomor slide
-            $num = $slide->createRichTextShape()->setWidth(50)->setHeight(30)->setOffsetX(900)->setOffsetY(10);
+            $num = $slide->createRichTextShape()->setWidth(100)->setHeight(30)->setOffsetX(850)->setOffsetY(10);
             $num->createTextRun((string)$slideNumber)->getFont()->setBold(true)->setSize(16)->setColor($colorPrimary);
+            $num->getActiveParagraph()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
             // Header
             $header = $slide->createRichTextShape()->setWidth(800)->setHeight(40)->setOffsetX(80)->setOffsetY(50);
@@ -423,13 +449,29 @@ class TemuanController extends Controller
             $slideNumber++;
         }
 
+
         // Simpan
         $fileName = 'Laporan_5S_' . str_replace(' ', '_', $patrolName) . '_' . now()->format('d-m-Y') . '.pptx';
+
+        // Jika ada filter PIC, ubah nama file menjadi "[Nama PIC] [Nama Patrol].pptx"
+        if ($request->has('filter_pic') && !empty($request->filter_pic)) {
+            // Ambil nama PIC dari salah satu temuan (karena sudah difilter, semua sama)
+            // Atau cari di DB employees jika perlu kepastian
+            $firstTemuan = $temuans->first();
+            $picName = $firstTemuan->pic_proses_name ?? $firstTemuan->pic_proses_nik ?? 'UnknownPIC';
+
+            // Bersihkan karakter aneh untuk nama file
+            $safePicName = preg_replace('/[^A-Za-z0-9_\- ]/', '', $picName);
+            $safePatrolName = preg_replace('/[^A-Za-z0-9_\- ]/', '', $patrolName);
+
+            $fileName = "{$safePicName}_{$safePatrolName}.pptx";
+        }
+
         $tempFile = sys_get_temp_dir() . '/' . $fileName;
         $writer = IOFactory::createWriter($ppt, 'PowerPoint2007');
         $writer->save($tempFile);
 
-        return response()->download($tempFile)->deleteFileAfterSend(true);
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 
     public function exportToPPTold($id)
