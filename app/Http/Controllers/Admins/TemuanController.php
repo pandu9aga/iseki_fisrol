@@ -136,30 +136,50 @@ class TemuanController extends Controller
             ->with('success', 'Data temuan berhasil disimpan.');
     }
 
-    // Update temuan (perbaikan + PIC Proses)
+    // Update temuan (perbaikan + PIC Proses + Original Temuan if needed)
     public function update(Request $request, $id)
     {
         $request->validate([
+            'Desc_Temuan'        => 'nullable|string',
             'Desc_Update_Temuan' => 'nullable|string',
             'pic_proses_nik'     => 'required|string|max:50',
         ]);
 
         $temuan = Temuan::findOrFail($id);
 
-        // Upload foto perbaikan (file upload atau base64)
-        $newPath = $this->handleImageUpload($request, 'Path_Update_Temuan', 'perbaikans');
-        if ($newPath) {
+        // 1. Update deskripsi temuan (Original) - filled() prevents empty overwrite
+        if ($request->filled('Desc_Temuan')) {
+            $temuan->Desc_Temuan = $request->input('Desc_Temuan');
+        }
+
+        // 2. Upload foto temuan (Original)
+        $newPathTemuan = $this->handleImageUpload($request, 'Path_Temuan', 'temuans');
+        if ($newPathTemuan) {
+            // hapus file lama
+            if ($temuan->Path_Temuan && file_exists(public_path('uploads/' . $temuan->Path_Temuan))) {
+                unlink(public_path('uploads/' . $temuan->Path_Temuan));
+            }
+            $temuan->Path_Temuan = $newPathTemuan;
+            $temuan->Rotate_Temuan = 0; // Reset rotation on new upload
+        }
+
+        // 3. Update deskripsi perbaikan - filled() prevents empty overwrite
+        if ($request->filled('Desc_Update_Temuan')) {
+            $temuan->Desc_Update_Temuan = $request->input('Desc_Update_Temuan');
+        }
+
+        // 4. Upload foto perbaikan
+        $newPathUpdate = $this->handleImageUpload($request, 'Path_Update_Temuan', 'perbaikans');
+        if ($newPathUpdate) {
             // hapus file lama
             if ($temuan->Path_Update_Temuan && file_exists(public_path('uploads/' . $temuan->Path_Update_Temuan))) {
                 unlink(public_path('uploads/' . $temuan->Path_Update_Temuan));
             }
-            $temuan->Path_Update_Temuan = $newPath;
+            $temuan->Path_Update_Temuan = $newPathUpdate;
+            $temuan->Rotate_Update = 0; // Reset rotation
         }
 
-        // Update deskripsi perbaikan
-        $temuan->Desc_Update_Temuan = $request->input('Desc_Update_Temuan', $temuan->Desc_Update_Temuan);
-
-        // Update PIC Proses
+        // 5. Update PIC Proses
         if ($request->has('pic_proses_nik')) {
             $temuan->pic_proses_nik = $request->input('pic_proses_nik');
         }
@@ -526,7 +546,6 @@ class TemuanController extends Controller
                 $drawingTemuan->setName('Gambar Temuan')
                     ->setPath($pathTemuan)
                     ->setHeight(250)
-                    ->setOffsetX(75)
                     ->setOffsetY(50);
             }
 

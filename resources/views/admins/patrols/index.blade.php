@@ -103,7 +103,6 @@
 </div>
 
 <!-- Modal Edit Patrol -->
-<!-- Modal Edit Patrol -->
 <div class="modal fade" id="editPatrolModal" tabindex="-1" aria-labelledby="editPatrolLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -137,10 +136,6 @@
     </div>
 </div>
 @endsection
-
-
-
-
 
 @section('script')
 <script>

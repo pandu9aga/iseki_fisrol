@@ -318,16 +318,47 @@
 
                     <!-- PIC Proses -->
                     <div class="mb-3">
-                        <label for="pic_proses_search" class="form-label fw-bold">PIC Proses (Penanggung Jawab Perbaikan) <span class="text-danger">*</span></label>
-                        <div class="position-relative">
-                            <input type="text" id="pic_proses_search" class="form-control"
-                                placeholder="Ketik nama karyawan untuk mencari..." autocomplete="off">
-                            <input type="hidden" name="pic_proses_nik" id="pic_proses_nik_input">
-                            <div id="picProsesResults" class="list-group position-absolute w-100" style="z-index:1050; max-height:200px; overflow-y:auto; display:none;"></div>
+                        <label class="form-label fw-bold">PIC Proses <span class="text-danger">*</span></label>
+
+                        <!-- Type Selection -->
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pic_type" id="picTypeMember" value="member" checked>
+                                <label class="form-check-label" for="picTypeMember">Member</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pic_type" id="picTypeLeader" value="leader">
+                                <label class="form-check-label" for="picTypeLeader">Leader</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pic_type" id="picTypeTeam" value="team">
+                                <label class="form-check-label" for="picTypeTeam">Team</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pic_type" id="picTypeOther" value="other">
+                                <label class="form-check-label" for="picTypeOther">Lain-lain</label>
+                            </div>
                         </div>
-                        <div id="selectedPicProses" class="mt-2 d-none">
-                            <span class="badge bg-primary fs-6 p-2" id="selectedPicProsesText"></span>
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-1" id="clearPicProses"><i class="fas fa-times"></i></button>
+
+                        <!-- Hidden Input for Form Submission -->
+                        <input type="hidden" name="pic_proses_nik" id="pic_proses_nik_input">
+
+                        <!-- 1. Search Container (Member/Leader) -->
+                        <div id="picSearchContainer">
+                            <div class="position-relative">
+                                <input type="text" id="pic_proses_search" class="form-control"
+                                    placeholder="Ketik nama karyawan untuk mencari..." autocomplete="off">
+                                <div id="picProsesResults" class="list-group position-absolute w-100" style="z-index:1050; max-height:200px; overflow-y:auto; display:none;"></div>
+                            </div>
+                            <div id="selectedPicProses" class="mt-2 d-none">
+                                <span class="badge bg-primary fs-6 p-2" id="selectedPicProsesText"></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-1" id="clearPicProses"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Manual Input Container -->
+                        <div id="picManualContainer" class="d-none">
+                            <input type="text" class="form-control" id="picManualInput" placeholder="Ketik PIC Proses...">
                         </div>
                     </div>
 
@@ -559,20 +590,6 @@
 
             } else if (action === 'rect') {
                 const canvas = tuiEditor._graphics.getCanvas();
-                // Create a Rect with Pink Stroke, White Outline (via Shadow hack or Group), Black Shadow
-                // Simplified: Pink Stroke + White Shadow (Glow) + Black Shadow? Multi-shadow impossible.
-                // User said: "outline garis warna putih" AND "shadow warna hitam".
-
-                // Let's create a rect that has a pink stroke.
-                // To get a white outline, we can use a white stroke and a pink fill? No, rects are usually frames.
-                // Let's try: Stroke Pink, Shadow Black.
-                // And maybe the "white outline" is implied as a contrast?
-                // Or maybe they want the stroke to be white and the fill pink?
-                // "warnanya pink" -> color is pink.
-                // "outline garis warna putih" -> outline line is white.
-
-                // Let's try a Group to achieve the exact look: White Rect (Back) + Pink Rect (Front).
-
                 const rectWhite = new fabric.Rect({
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
@@ -880,11 +897,35 @@
             // Fill Update Form
             document.getElementById('pic_proses_nik_input').value = picNik;
             document.getElementById('pic_proses_search').value = '';
+            const picManualInput = document.getElementById('picManualInput');
+            if (picManualInput) picManualInput.value = '';
+            document.getElementById('selectedPicProses').classList.add('d-none');
+
+            // Determine Type
+            let type = 'member';
             if (picNik) {
-                document.getElementById('selectedPicProsesText').textContent = `${picName} (${picNik})`;
-                document.getElementById('selectedPicProses').classList.remove('d-none');
-            } else {
-                document.getElementById('selectedPicProses').classList.add('d-none');
+                // If numeric, assume Member (default)
+                if (/^\d+$/.test(picNik)) {
+                    type = 'member';
+                    document.getElementById('selectedPicProsesText').textContent = `${picName} (${picNik})`;
+                    document.getElementById('selectedPicProses').classList.remove('d-none');
+                } else if (picNik === 'Leader') {
+                    type = 'leader';
+                } else if (picNik === 'Team') {
+                    type = 'team';
+                } else {
+                    type = 'other';
+                    if (picManualInput) picManualInput.value = picNik;
+                }
+            }
+
+            // Set Radio
+            const radio = document.querySelector(`input[name="pic_type"][value="${type}"]`);
+            if (radio) radio.checked = true;
+
+            // Trigger UI Update
+            if (typeof togglePicInput === 'function') {
+                togglePicInput();
             }
 
             // Display PIC Proses in View
@@ -905,6 +946,27 @@
             rotationState[`perbaikan_${id}`] = parseInt(btn.dataset.rotateUpdate || 0);
             if (typeof window.applyRotationFromState === 'function') {
                 window.applyRotationFromState(id);
+            }
+
+            // Auto-fill form inputs with existing data (prevent data loss)
+            const descUpdateInput = document.getElementById('Desc_Update_Temuan');
+            if (descUpdateInput) {
+                descUpdateInput.value = btn.dataset.descUpdate || '';
+            }
+
+            // Clear file input (user must explicitly upload new photo)
+            const fileInput = document.getElementById('Path_Update_Temuan');
+            if (fileInput) {
+                fileInput.value = '';
+                // Show info about existing photo
+                const existingInfo = fileInput.parentElement.querySelector('.existing-foto-info');
+                if (existingInfo) existingInfo.remove();
+                if (btn.dataset.fotoUpdate) {
+                    const info = document.createElement('small');
+                    info.className = 'form-text text-muted existing-foto-info';
+                    info.textContent = 'Foto saat ini tetap tersimpan. Upload baru hanya jika ingin mengganti.';
+                    fileInput.parentElement.appendChild(info);
+                }
             }
         }
 
@@ -952,12 +1014,52 @@
             document.getElementById('selectedPicProses').classList.add('d-none');
         });
 
+        // ============ Multi-Type PIC Logic ============
+        const picRadios = document.getElementsByName('pic_type');
+        picRadios.forEach(radio => {
+            radio.addEventListener('change', togglePicInput);
+        });
+
+        const picManualInput = document.getElementById('picManualInput');
+        if (picManualInput) {
+            picManualInput.addEventListener('input', function() {
+                document.getElementById('pic_proses_nik_input').value = this.value;
+            });
+        }
+
+        function togglePicInput() {
+            const checkedRadio = document.querySelector('input[name="pic_type"]:checked');
+            if (!checkedRadio) return;
+            const type = checkedRadio.value;
+
+            const searchContainer = document.getElementById('picSearchContainer');
+            const manualContainer = document.getElementById('picManualContainer');
+            const hiddenInput = document.getElementById('pic_proses_nik_input');
+
+            // Hide all
+            if (searchContainer) searchContainer.classList.add('d-none');
+            if (manualContainer) manualContainer.classList.add('d-none');
+
+            // Show based on type
+            if (type === 'member') {
+                if (searchContainer) searchContainer.classList.remove('d-none');
+            } else if (type === 'leader') {
+                hiddenInput.value = 'Leader';
+            } else if (type === 'team') {
+                hiddenInput.value = 'Team';
+            } else {
+                // Lain-lain
+                if (manualContainer) manualContainer.classList.remove('d-none');
+                if (picManualInput) hiddenInput.value = picManualInput.value;
+            }
+        }
+
         // Validate Update Form (PIC Proses Required)
         document.getElementById('updateTemuanForm').addEventListener('submit', function(e) {
             const picNik = document.getElementById('pic_proses_nik_input').value;
             if (!picNik) {
                 e.preventDefault();
-                alert('Mohon pilih PIC Proses (Penanggung Jawab Perbaikan) terlebih dahulu.');
+                alert('Mohon pilih PIC Proses terlebih dahulu.');
             }
         });
     });
