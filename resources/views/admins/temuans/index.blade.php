@@ -1054,14 +1054,109 @@
             }
         }
 
-        // Validate Update Form (PIC Proses Required)
-        document.getElementById('updateTemuanForm').addEventListener('submit', function(e) {
-            const picNik = document.getElementById('pic_proses_nik_input').value;
-            if (!picNik) {
+        // Validate Update Form (PIC Proses Required) AND AJAX Submit
+        const updateTemuanFormElement = document.getElementById('updateTemuanForm');
+        if (updateTemuanFormElement) {
+            updateTemuanFormElement.addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Mohon pilih PIC Proses terlebih dahulu.');
-            }
-        });
+
+                const picNik = document.getElementById('pic_proses_nik_input').value;
+                if (!picNik) {
+                    alert('Mohon pilih PIC Proses terlebih dahulu.');
+                    return;
+                }
+
+                const formData = new FormData(this);
+                const actionUrl = this.action;
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.textContent = "Menyimpan...";
+
+                fetch(actionUrl, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+
+                            // Update modal foto & desc
+                            if (data.full_path_update) {
+                                const modalImg = document.getElementById("modalFotoUpdate");
+                                if (modalImg) modalImg.src = data.full_path_update;
+                            }
+                            const modalDesc = document.getElementById("modalDescUpdate");
+                            if (modalDesc) modalDesc.textContent = data.desc_update || "-";
+
+                            // Update btn data attributes
+                            const statusTemuanIdVal = document.getElementById("statusTemuanId").value;
+                            const btn = document.querySelector(`button.view-temuan[data-id="${statusTemuanIdVal}"]`);
+                            if (btn) {
+                                btn.dataset.fotoUpdate = data.path_update || "";
+                                btn.dataset.descUpdate = data.desc_update || "";
+                                btn.dataset.picProsesNik = data.pic_nik || "";
+                                btn.dataset.picProsesName = data.pic_name || "";
+
+                                // Update table cells (0:No, 1:Penemu, 2:FotoTem, 3:DescTem, 4:FotoUpd, 5:DescUpd, 6:PIC, 7:Act)
+                                const row = btn.closest("tr");
+                                if (row) {
+                                    const cells = row.querySelectorAll("td");
+
+                                    // Cell 4: Foto Perbaikan
+                                    if (data.full_path_update && cells[4]) {
+                                        cells[4].innerHTML = `<img src="${data.full_path_update}" style="max-height:100px;">`;
+                                    }
+
+                                    // Cell 5: Hasil Perbaikan
+                                    if (cells[5]) {
+                                        cells[5].textContent = data.desc_update || "";
+                                    }
+
+                                    // Cell 6: PIC
+                                    if (cells[6]) {
+                                        let picDisplay = data.pic_name || data.pic_nik || "-";
+                                        cells[6].innerHTML = `<div style="max-height: 100px; overflow-y: auto;">
+                                        <span class="badge bg-info text-white">${picDisplay}</span>
+                                    </div>`;
+
+                                        // Make sure modal span is updated too
+                                        const modalPicProsesName = document.getElementById('modalPicProsesName');
+                                        if (modalPicProsesName) {
+                                            modalPicProsesName.textContent = picDisplay;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Reset file input
+                            const fileInput = this.querySelector('input[type="file"]');
+                            if (fileInput) fileInput.value = "";
+
+                            // Also hide existing foto info text if uploaded
+                            if (data.path_update) {
+                                const existingInfo = fileInput.parentElement ? fileInput.parentElement.querySelector('.existing-foto-info') : null;
+                                if (existingInfo) existingInfo.remove();
+                            }
+
+                        } else {
+                            alert("Gagal update perbaikan: " + (data.message || ''));
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Error saat update perbaikan");
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    });
+            });
+        }
     });
 </script>
 

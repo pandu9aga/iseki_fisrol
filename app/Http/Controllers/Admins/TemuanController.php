@@ -186,6 +186,18 @@ class TemuanController extends Controller
 
         $temuan->save();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Temuan berhasil diperbarui.',
+                'path_update' => $temuan->Path_Update_Temuan,
+                'desc_update' => $temuan->Desc_Update_Temuan,
+                'full_path_update' => $temuan->Path_Update_Temuan ? asset('uploads/' . $temuan->Path_Update_Temuan) : null,
+                'pic_nik' => $temuan->pic_proses_nik,
+                'pic_name' => $temuan->pic_proses_name ?? $temuan->pic_proses_nik,
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Temuan berhasil diperbarui.');
     }
 
@@ -242,16 +254,6 @@ class TemuanController extends Controller
 
         return redirect()->back()->with('success', 'Data temuan berhasil dihapus.');
     }
-
-    // Update status temuan
-    // public function updateStatus(Request $request, $id)
-    // {
-    //     $temuan = Temuan::findOrFail($id);
-    //     $temuan->Status_Temuan = $request->has('Status_Temuan') ? 'Done' : null;
-    //     $temuan->save();
-
-    //     return redirect()->back()->with('success', 'Temuan berhasil diperbarui.');
-    // }
 
     public function updateStatus(Request $request, $id)
     {
