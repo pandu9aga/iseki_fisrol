@@ -17,7 +17,7 @@
                     </p>
                     <p class="m-0 text-muted">
                         Time Patrol :
-                        {{ $patrol->Time_Patrol ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d-m-Y ') : '-' }}
+                        {{ $patrol->Time_Patrol ? \Carbon\Carbon::parse($patrol->Time_Patrol)->format('d F Y ') : '-' }}
                     </p>
                 </div>
             </div>
@@ -350,27 +350,63 @@
                 tuiEditor.startDrawingMode('FREE_DRAWING');
                 tuiEditor.setBrush({
                     width: 10,
-                    color: '#ff9900'
+                    color: '#FF1493'
                 });
             } else if (action === 'rect') {
                 const canvas = tuiEditor._graphics.getCanvas();
-                tuiEditor.addShape('rect', {
-                    stroke: '#ff9900',
-                    fill: 'transparent',
-                    strokeWidth: 6,
-                    width: 200,
-                    height: 100,
+                // Create a Group to achieve: White Rect (Back) + Pink Rect (Front) + Shadow
+                const rectWhite = new fabric.Rect({
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
+                    width: 200,
+                    height: 100,
+                    fill: 'transparent',
+                    stroke: 'white',
+                    strokeWidth: 12, // Thicker white stroke
+                    originX: 'center',
+                    originY: 'center',
+                    shadow: {
+                        color: 'black',
+                        blur: 15,
+                        offsetX: 5,
+                        offsetY: 5
+                    }
+                });
+
+                const rectPink = new fabric.Rect({
+                    left: canvas.getWidth() / 2,
+                    top: canvas.getHeight() / 2,
+                    width: 200,
+                    height: 100,
+                    fill: 'transparent',
+                    stroke: '#FF1493',
+                    strokeWidth: 6, // Thinner pink stroke inside
                     originX: 'center',
                     originY: 'center'
                 });
+
+                const group = new fabric.Group([rectWhite, rectPink], {
+                    left: canvas.getWidth() / 2,
+                    top: canvas.getHeight() / 2,
+                });
+
+                canvas.add(group);
+                canvas.setActiveObject(group);
+
             } else if (action === 'arrow') {
                 const canvas = tuiEditor._graphics.getCanvas();
                 tuiEditor.addIcon('arrow', {
-                    fill: '#ff9900',
+                    fill: '#FF1493',
+                    stroke: 'white',
+                    strokeWidth: 2,
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
+                    shadow: {
+                        color: 'black',
+                        blur: 10,
+                        offsetX: 5,
+                        offsetY: 5
+                    },
                     originX: 'center',
                     originY: 'center'
                 });

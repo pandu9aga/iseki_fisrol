@@ -87,6 +87,8 @@
                         class="fas fa-fw fa-table"></i><span>Patrol</span></a></li>
             <hr class="sidebar-divider my-0">
             {{-- <li class="nav-item"><a class="nav-link" href="{{ route('temuan') }}"><i class="fas fa-fw fa-folder"></i><span>Temuan</span></a></li> --}}
+            <li class="nav-item"><a class="nav-link" href="{{ route('admins.reports.kontribusi') }}"><i
+                        class="fas fa-fw fa-chart-bar"></i><span>Laporan Kontribusi</span></a></li>
             <li class="nav-item"><a class="nav-link" href="{{ route('logout') }}"><i
                         class="fas fa-fw fa-sign-out-alt"></i><span>Log Out</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">

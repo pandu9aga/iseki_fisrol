@@ -13,6 +13,7 @@ use App\Http\Controllers\Admins\PatrolController;
 use App\Http\Controllers\Admins\PatrolMemberController;
 use App\Http\Controllers\Admins\NilaiController;
 use App\Http\Controllers\Admins\AverageController;
+use App\Http\Controllers\Admins\ReportKontribusiController;
 
 
 use App\Http\Controllers\Users\UserDashboardController;
@@ -85,12 +86,20 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::delete('/temuan/{id}', [TemuanController::class, 'destroy'])->name('temuan.destroy');
     Route::put('/temuan/{id}/status', [TemuanController::class, 'updateStatus'])->name('temuan.updateStatus');
     Route::get('/temuan/export/{id}', [TemuanController::class, 'exportToPPT'])->name('temuan.export');
+    Route::put('/temuan/{id}/rotate', [TemuanController::class, 'updateRotation'])->name('temuan.rotate');
+
+    // Employee Search (AJAX)
+    Route::get('/admin/employee/search', [TemuanController::class, 'searchEmployee'])->name('admin.employee.search');
+    Route::get('/admin/employee/validate', [TemuanController::class, 'validateNik'])->name('admin.employee.validate');
 
     // Route::get('/nilai', [NilaiController::class, 'index'])->name('nilai.index');
     Route::get('/nilai/{id}', [NilaiController::class, 'index'])->name('nilai.index');
     Route::post('/nilai/{id}', [NilaiController::class, 'store'])->name('nilai.store');
 
     Route::get('/average/{patrolId}', [AverageController::class, 'index'])->name('average.index');
+
+    // Laporan Kontribusi
+    Route::get('/admin/reports/kontribusi', [ReportKontribusiController::class, 'index'])->name('admins.reports.kontribusi');
 });
 
 

@@ -19,8 +19,38 @@ class Temuan extends Model
         'Id_Patrol',
         'Id_User',
         'Id_Member',
-        'Status_Temuan'
+        'nik_penemu',
+        'Status_Temuan',
+        'pic_proses_nik',
+        'Rotate_Temuan',
+        'Rotate_Update'
     ];
+
+    /**
+     * Get penemu name from rifa.employees via nik_penemu
+     */
+    public function getNikPenemuNameAttribute()
+    {
+        if (!$this->nik_penemu) return null;
+        $emp = DB::connection('rifa')
+            ->table('employees')
+            ->where('nik', $this->nik_penemu)
+            ->first();
+        return $emp->nama ?? null;
+    }
+
+    /**
+     * Get PIC Proses name from rifa.employees via pic_proses_nik
+     */
+    public function getPicProsesNameAttribute()
+    {
+        if (!$this->pic_proses_nik) return null;
+        $emp = DB::connection('rifa')
+            ->table('employees')
+            ->where('nik', $this->pic_proses_nik)
+            ->first();
+        return $emp->nama ?? null;
+    }
 
     public function getPenemuNameAttribute()
     {

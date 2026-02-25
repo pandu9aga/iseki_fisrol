@@ -9,9 +9,8 @@
     <link href="{{ asset('assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/sb-admin-2.min.css') }}" rel="stylesheet">
 
-    {{-- Library QR Scanner --}}
-    <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
-    
+
+
     <style>
         .login-container {
             transition: all 0.4s ease;
@@ -44,7 +43,7 @@
         }
 
         .bg-login-image {
-            background: url('{{ asset('assets/img/login-bg.jpg') }}') center center;
+            background: url('{{ asset(' assets/img/login-bg.jpg') }}') center center;
             background-size: cover;
         }
 
@@ -69,41 +68,15 @@
 
                             {{-- Error message --}}
                             @if ($errors->any())
-                                <div class="alert alert-danger py-2">
-                                    @foreach ($errors->all() as $error)
-                                        <p class="mb-0">{{ $error }}</p>
-                                    @endforeach
-                                </div>
+                            <div class="alert alert-danger py-2">
+                                @foreach ($errors->all() as $error)
+                                <p class="mb-0">{{ $error }}</p>
+                                @endforeach
+                            </div>
                             @endif
 
-                            {{-- Switch buttons --}}
-                            <div class="mb-3 text-center">
-                                <button id="btnMember" class="btn btn-sm btn-outline-primary btn-switch active">
-                                    Member
-                                </button>
-                                <button id="btnAdmin" class="btn btn-sm btn-outline-primary btn-switch">
-                                    Admin
-                                </button>
-                            </div>
-
-                            {{-- MEMBER LOGIN FORM --}}
-                            <form id="formMember" class="user login-form active" method="POST"
-                                action="{{ route('login.member') }}">
-                                @csrf
-                                <div class="form-group">
-                                    <input id="nikInput" name="nik" type="text"
-                                        class="form-control form-control-user" placeholder="Masukkan NIK">
-                                </div><div class="form-group">
-                                    <input id="passwordInput" name="password" type="password"
-                                        class="form-control form-control-user" placeholder="Masukkan Password">
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-user btn-block">
-                                    Login Member
-                                </button>
-                            </form>
-
                             {{-- ADMIN LOGIN FORM --}}
-                            <form id="formAdmin" class="user login-form" method="POST"
+                            <form id="formAdmin" class="user login-form active" method="POST"
                                 action="{{ route('login.admin') }}">
                                 @csrf
                                 <div class="form-group">
@@ -115,7 +88,7 @@
                                         placeholder="Password">
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-user btn-block">
-                                    Login Admin
+                                    Login
                                 </button>
                             </form>
                         </div>
@@ -125,84 +98,12 @@
         </div>
     </div>
 
-    {{-- Modal Scan --}}
-    <div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Scan NIK Barcode</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
-                        onclick="stopScanner()">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div id="reader"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <script src="{{ asset('assets/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
-    <script>
-        const btnMember = document.getElementById('btnMember');
-        const btnAdmin = document.getElementById('btnAdmin');
-        const formMember = document.getElementById('formMember');
-        const formAdmin = document.getElementById('formAdmin');
-        const btnScan = document.getElementById('btnScan');
-        const nikInput = document.getElementById('nikInput');
 
-        btnMember.addEventListener('click', () => {
-            btnMember.classList.add('active');
-            btnAdmin.classList.remove('active');
-            formMember.classList.add('active');
-            formAdmin.classList.remove('active');
-        });
-
-        btnAdmin.addEventListener('click', () => {
-            btnAdmin.classList.add('active');
-            btnMember.classList.remove('active');
-            formAdmin.classList.add('active');
-            formMember.classList.remove('active');
-        });
-
-        // Scanner logic
-        let html5QrCode;
-        btnScan.addEventListener('click', () => {
-            $('#scanModal').modal('show');
-            startScanner();
-        });
-
-        function startScanner() {
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({
-                    facingMode: "environment"
-                }, {
-                    fps: 10,
-                    qrbox: 250
-                },
-                qrCodeMessage => {
-                    nikInput.value = qrCodeMessage;
-                    $('#scanModal').modal('hide');
-                    stopScanner();
-                    formMember.submit();
-                },
-                errorMessage => {}
-            ).catch(err => console.log(err));
-        }
-
-        function stopScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => html5QrCode.clear()).catch(err => console.log(err));
-            }
-        }
-
-        $('#scanModal').on('hidden.bs.modal', function() {
-            stopScanner();
-        });
-    </script>
     <script>
         // document.addEventListener("DOMContentLoaded", function() {
         //     const qrDiv = document.createElement('div');
