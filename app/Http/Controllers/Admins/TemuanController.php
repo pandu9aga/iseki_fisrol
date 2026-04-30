@@ -291,6 +291,9 @@ class TemuanController extends Controller
     // Export temuan ke PPT
     public function exportToPPT(Request $request, $id)
     {
+        ini_set('memory_limit', '-1');
+        ini_set('max_execution_time', '300'); // 5 minutes
+
         $query = Temuan::with(['patrol', 'user', 'member'])
             ->where('Id_Patrol', $id);
 
@@ -498,6 +501,9 @@ class TemuanController extends Controller
 
     public function exportToPPTold($id)
     {
+        ini_set('memory_limit', '-1');
+        ini_set('max_execution_time', '300'); // 5 minutes
+
         $temuans = Temuan::with(['patrol', 'user', 'member'])
             ->where('Id_Patrol', $id)
             ->get();
