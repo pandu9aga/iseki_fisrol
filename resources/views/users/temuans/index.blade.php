@@ -318,8 +318,8 @@
                 container.innerHTML = '';
                 tuiEditor = new tui.ImageEditor(container, {
                     usageStatistics: false,
-                    cssMaxWidth: 2000,
-                    cssMaxHeight: 2000,
+                    cssMaxWidth: window.innerWidth,
+                    cssMaxHeight: window.innerHeight - 120,
                 });
 
                 tuiEditor.loadImageFromURL(imageUrl, 'uploaded').then(() => {
@@ -332,13 +332,36 @@
                             left: canvas.getWidth() / 2,
                             top: canvas.getHeight() / 2
                         });
-                        canvas.centerObject(img);
-                        canvas.renderAll();
-                    }
+                    canvas.centerObject(img);
+                    canvas.renderAll();
+                    window._tuiImageWidth = img ? img.width : 1;
+                    window._tuiScale = window._tuiImageWidth / window.innerWidth;
                 });
-            }, {
-                once: true
-            });
+            }, { once: true });
+
+            modal._element.addEventListener('hidden.bs.modal', () => {
+                if (tuiEditor) {
+                    tuiEditor.destroy();
+                    tuiEditor = null;
+                }
+                setTimeout(() => {
+                    const otherModal = document.querySelector('.modal.show');
+                    if (otherModal) {
+                        document.body.classList.add('modal-open');
+                        document.body.style.overflow = 'hidden';
+                        const modalBody = otherModal.querySelector('.modal-body');
+                        if (modalBody) modalBody.style.overflowY = 'auto';
+                        if (!document.querySelector('.modal-backdrop')) {
+                            const backdrop = document.createElement('div');
+                            backdrop.className = 'modal-backdrop fade show';
+                            document.body.appendChild(backdrop);
+                        }
+                    } else {
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                    }
+                }, 100);
+            }, { once: true });
         }
 
         $(document).on('click', '[data-tool]', function(e) {
@@ -346,41 +369,49 @@
             const action = $(this).data('tool');
             tuiEditor.stopDrawingMode();
 
+            const canvas = tuiEditor._graphics.getCanvas();
+            const scale = window._tuiScale || 1;
+
             if (action === 'draw') {
                 tuiEditor.startDrawingMode('FREE_DRAWING');
                 tuiEditor.setBrush({
-                    width: 10,
+                    width: 30 * scale,
                     color: '#FF1493'
                 });
             } else if (action === 'rect') {
-                const canvas = tuiEditor._graphics.getCanvas();
-                // Create a Group to achieve: White Rect (Back) + Pink Rect (Front) + Shadow
+                const rectW = 500 * scale;
+                const rectH = 300 * scale;
+                const outerStroke = 25 * scale;
+                const innerStroke = 12 * scale;
+                const shadowBlur = 30 * scale;
+                const shadowOffset = 15 * scale;
+
                 const rectWhite = new fabric.Rect({
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
-                    width: 200,
-                    height: 100,
+                    width: rectW,
+                    height: rectH,
                     fill: 'transparent',
                     stroke: 'white',
-                    strokeWidth: 12, // Thicker white stroke
+                    strokeWidth: outerStroke,
                     originX: 'center',
                     originY: 'center',
                     shadow: {
                         color: 'black',
-                        blur: 15,
-                        offsetX: 5,
-                        offsetY: 5
+                        blur: shadowBlur,
+                        offsetX: shadowOffset,
+                        offsetY: shadowOffset
                     }
                 });
 
                 const rectPink = new fabric.Rect({
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
-                    width: 200,
-                    height: 100,
+                    width: rectW,
+                    height: rectH,
                     fill: 'transparent',
                     stroke: '#FF1493',
-                    strokeWidth: 6, // Thinner pink stroke inside
+                    strokeWidth: innerStroke,
                     originX: 'center',
                     originY: 'center'
                 });
@@ -394,18 +425,21 @@
                 canvas.setActiveObject(group);
 
             } else if (action === 'arrow') {
-                const canvas = tuiEditor._graphics.getCanvas();
+                const strokeW = 8 * scale;
+                const shadowBlur = 25 * scale;
+                const shadowOffset = 12 * scale;
+
                 tuiEditor.addIcon('arrow', {
                     fill: '#FF1493',
                     stroke: 'white',
-                    strokeWidth: 2,
+                    strokeWidth: strokeW,
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
                     shadow: {
                         color: 'black',
-                        blur: 10,
-                        offsetX: 5,
-                        offsetY: 5
+                        blur: shadowBlur,
+                        offsetX: shadowOffset,
+                        offsetY: shadowOffset
                     },
                     originX: 'center',
                     originY: 'center'
