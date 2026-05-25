@@ -258,6 +258,49 @@
     .tui-image-editor-partition {
         display: none !important;
     }
+
+    /* Toolbar buttons - bigger for mobile */
+    #custom-tui-toolbar .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 1.2rem;
+        min-width: 48px;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+    #custom-tui-toolbar .btn i {
+        font-size: 1.3rem;
+    }
+    #custom-tui-toolbar .btn-success,
+    #custom-tui-toolbar .btn-secondary {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
+        min-width: auto;
+        min-height: 40px;
+    }
+    @media (max-width: 576px) {
+        #custom-tui-toolbar {
+            gap: 0.5rem !important;
+            padding: 0.5rem !important;
+        }
+        #custom-tui-toolbar .btn {
+            padding: 0.7rem 0.9rem;
+            font-size: 1.3rem;
+            min-width: 52px;
+            min-height: 52px;
+        }
+        #custom-tui-toolbar .btn i {
+            font-size: 1.4rem;
+        }
+        #custom-tui-toolbar .btn-success,
+        #custom-tui-toolbar .btn-secondary {
+            padding: 0.5rem 0.8rem;
+            font-size: 0.9rem;
+            min-height: 44px;
+        }
+    }
 </style>
 @endsection
 
@@ -324,6 +367,21 @@
 
                 tuiEditor.loadImageFromURL(imageUrl, 'uploaded').then(() => {
                     const canvas = tuiEditor._graphics.getCanvas();
+
+                    const sc = getCanvasScale(canvas);
+                    canvas.selectionColor = 'rgba(255,20,147,0.15)';
+                    canvas.selectionBorderColor = '#FF1493';
+                    fabric.Object.prototype.set({
+                        borderColor: '#FF1493',
+                        cornerColor: '#FF1493',
+                        cornerStrokeColor: '#FF1493',
+                        cornerSize: Math.round(20 * sc),
+                        transparentCorners: false,
+                        touchCornerSize: Math.round(28 * sc),
+                        padding: Math.round(10 * sc),
+                        rotatingPointOffset: Math.round(55 * sc)
+                    });
+
                     const img = canvas.getObjects()[0];
                     if (img) {
                         img.set({
@@ -334,8 +392,7 @@
                         });
                     canvas.centerObject(img);
                     canvas.renderAll();
-                    window._tuiImageWidth = img ? img.width : 1;
-                    window._tuiScale = window._tuiImageWidth / window.innerWidth;
+                    }
                 });
             }, { once: true });
 
@@ -364,86 +421,72 @@
             }, { once: true });
         }
 
+        function getCanvasScale(cv) {
+            const el = cv.getElement();
+            const displayW = el.offsetWidth || el.clientWidth || cv.getWidth();
+            return cv.getWidth() / displayW;
+        }
+
+        function toCanvas(displayPx, cv) {
+            return displayPx * getCanvasScale(cv);
+        }
+
         $(document).on('click', '[data-tool]', function(e) {
             if (!tuiEditor) return;
             const action = $(this).data('tool');
             tuiEditor.stopDrawingMode();
 
             const canvas = tuiEditor._graphics.getCanvas();
-            const scale = window._tuiScale || 1;
 
             if (action === 'draw') {
                 tuiEditor.startDrawingMode('FREE_DRAWING');
                 tuiEditor.setBrush({
-                    width: 30 * scale,
+                    width: toCanvas(10, canvas),
                     color: '#FF1493'
                 });
             } else if (action === 'rect') {
-                const rectW = 500 * scale;
-                const rectH = 300 * scale;
-                const outerStroke = 25 * scale;
-                const innerStroke = 12 * scale;
-                const shadowBlur = 30 * scale;
-                const shadowOffset = 15 * scale;
+                const rectW = toCanvas(250, canvas);
+                const rectH = toCanvas(180, canvas);
+                const strokeW = toCanvas(6, canvas);
 
-                const rectWhite = new fabric.Rect({
-                    left: canvas.getWidth() / 2,
-                    top: canvas.getHeight() / 2,
-                    width: rectW,
-                    height: rectH,
-                    fill: 'transparent',
-                    stroke: 'white',
-                    strokeWidth: outerStroke,
-                    originX: 'center',
-                    originY: 'center',
-                    shadow: {
-                        color: 'black',
-                        blur: shadowBlur,
-                        offsetX: shadowOffset,
-                        offsetY: shadowOffset
-                    }
-                });
-
-                const rectPink = new fabric.Rect({
+                const rect = new fabric.Rect({
                     left: canvas.getWidth() / 2,
                     top: canvas.getHeight() / 2,
                     width: rectW,
                     height: rectH,
                     fill: 'transparent',
                     stroke: '#FF1493',
-                    strokeWidth: innerStroke,
+                    strokeWidth: strokeW,
                     originX: 'center',
                     originY: 'center'
                 });
 
-                const group = new fabric.Group([rectWhite, rectPink], {
-                    left: canvas.getWidth() / 2,
-                    top: canvas.getHeight() / 2,
-                });
-
-                canvas.add(group);
-                canvas.setActiveObject(group);
+                canvas.add(rect);
+                canvas.setActiveObject(rect);
 
             } else if (action === 'arrow') {
-                const strokeW = 8 * scale;
-                const shadowBlur = 25 * scale;
-                const shadowOffset = 12 * scale;
-
-                tuiEditor.addIcon('arrow', {
-                    fill: '#FF1493',
-                    stroke: 'white',
-                    strokeWidth: strokeW,
-                    left: canvas.getWidth() / 2,
-                    top: canvas.getHeight() / 2,
-                    shadow: {
-                        color: 'black',
-                        blur: shadowBlur,
-                        offsetX: shadowOffset,
-                        offsetY: shadowOffset
-                    },
-                    originX: 'center',
-                    originY: 'center'
-                });
+                const sz = toCanvas(80, canvas);
+                const cx = canvas.getWidth() / 2;
+                const cy = canvas.getHeight() / 2;
+                const sw = toCanvas(4, canvas);
+                const headSz = sz * 0.35;
+                const shaftLen = sz * 0.6;
+                const arrow = new fabric.Group([
+                    new fabric.Rect({
+                        left: -shaftLen * 0.45, top: -sw / 2,
+                        width: shaftLen, height: sw,
+                        fill: '#FF1493', originX: 'center', originY: 'center'
+                    }),
+                    new fabric.Triangle({
+                        left: shaftLen * 0.25,
+                        width: headSz, height: headSz,
+                        fill: '#FF1493', originX: 'center', originY: 'center',
+                        angle: 90
+                    })
+                ], { left: cx, top: cy, originX: 'center', originY: 'center' });
+                canvas.add(arrow);
+                canvas.setActiveObject(arrow);
+                canvas.renderAll();
             } else if (action === 'rotate') {
                 tuiEditor.rotate(90);
             } else if (action === 'undo') {

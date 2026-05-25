@@ -202,16 +202,22 @@ class TemuanController extends Controller
     }
 
     /**
-     * Helper: Handle image upload (file or base64)
+     * Helper: Handle image upload (file or base64) dengan subfolder berdasarkan YYYY-MM
      */
     private function handleImageUpload(Request $request, $inputName, $subfolder)
     {
-        $folder = public_path('uploads/' . $subfolder);
+        // 1. Ambil tahun dan bulan saat ini (Format: 2026-05)
+        $yearMonth = now()->format('Y-m');
+
+        // 2. Gabungkan subfolder utama dengan tahun-bulan (Contoh: uploads/temuans/2026-05)
+        $targetSubfolder = $subfolder . '/' . $yearMonth;
+        $folder = public_path('uploads/' . $targetSubfolder);
+
         if (!file_exists($folder)) {
             mkdir($folder, 0777, true);
         }
 
-        // 1. Check base64 input
+        // 3. Cek input base64
         if ($request->filled($inputName)) {
             $input = $request->input($inputName);
             if (is_string($input) && Str::startsWith($input, 'data:image')) {
@@ -221,18 +227,22 @@ class TemuanController extends Controller
 
                 $filename = Str::uuid() . '.jpg';
                 file_put_contents($folder . '/' . $filename, $binary);
-                return $subfolder . '/' . $filename;
+                
+                // Kembalikan path lengkap dengan YYYY-MM untuk disimpan di database
+                return $targetSubfolder . '/' . $filename;
             }
         }
 
-        // 2. Check file upload
+        // 4. Cek file upload biasa
         if ($request->hasFile($inputName)) {
             $file = $request->file($inputName);
             $filename = uniqid() . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
 
-            // Simply move the file (no GD required)
+            // Pindahkan file ke folder tujuan
             $file->move($folder, $filename);
-            return $subfolder . '/' . $filename;
+            
+            // Kembalikan path lengkap dengan YYYY-MM untuk disimpan di database
+            return $targetSubfolder . '/' . $filename;
         }
 
         return null;
@@ -382,6 +392,12 @@ class TemuanController extends Controller
         $slideNumber = 1;
         foreach ($temuans as $temuan) {
             $slide = $ppt->createSlide();
+
+            // Background biru jika status Done
+            if ($temuan->Status_Temuan === 'Done') {
+                $bg = $slide->createRichTextShape()->setWidth(960)->setHeight(720)->setOffsetX(0)->setOffsetY(0);
+                $bg->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)->setStartColor(new Color('FFADD8E6'))->setEndColor(new Color('FFADD8E6'));
+            }
 
             // Nomor slide
             $num = $slide->createRichTextShape()->setWidth(100)->setHeight(30)->setOffsetX(850)->setOffsetY(10);
