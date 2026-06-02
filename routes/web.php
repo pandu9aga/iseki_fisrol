@@ -14,6 +14,9 @@ use App\Http\Controllers\Admins\PatrolMemberController;
 use App\Http\Controllers\Admins\NilaiController;
 use App\Http\Controllers\Admins\AverageController;
 use App\Http\Controllers\Admins\ReportKontribusiController;
+use App\Http\Controllers\Admins\DailyPatrolController;
+use App\Http\Controllers\Admins\DailyPatrolMemberController;
+use App\Http\Controllers\Admins\DailyTemuanController;
 
 
 use App\Http\Controllers\Users\UserDashboardController;
@@ -21,6 +24,9 @@ use App\Http\Controllers\Users\UserPatrolController;
 use App\Http\Controllers\Users\UserPatrolMemberController;
 use App\Http\Controllers\Users\UserTemuanController;
 use App\Http\Controllers\Users\UserNilaiController;
+use App\Http\Controllers\Users\UserDailyPatrolController;
+use App\Http\Controllers\Users\UserDailyPatrolMemberController;
+use App\Http\Controllers\Users\UserDailyTemuanController;
 
 
 
@@ -100,6 +106,27 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     // Laporan Kontribusi
     Route::get('/admin/reports/kontribusi', [ReportKontribusiController::class, 'index'])->name('admins.reports.kontribusi');
+
+    // Daily Patrol
+    Route::get('/daily_patrol', [DailyPatrolController::class, 'index'])->name('daily_patrol');
+    Route::post('/daily_patrol', [DailyPatrolController::class, 'create'])->name('daily_patrol.create');
+    Route::put('/daily_patrol/{id}', [DailyPatrolController::class, 'update'])->name('daily_patrol.update');
+    Route::delete('/daily_patrol/{id}', [DailyPatrolController::class, 'destroy'])->name('daily_patrol.destroy');
+
+    // Daily Patrol Member
+    Route::get('/daily_patrol_member/{id}', [DailyPatrolMemberController::class, 'index'])->name('daily_patrol_member.index');
+    Route::post('/daily_patrol_member', [DailyPatrolMemberController::class, 'create'])->name('daily_patrol_member.create');
+    Route::put('/daily_patrol_member/update/{id}', [DailyPatrolMemberController::class, 'update'])->name('daily_patrol_member.update');
+    Route::delete('/daily_patrol_member/{id}', [DailyPatrolMemberController::class, 'destroy'])->name('daily_patrol_member.destroy');
+
+    // Daily Temuan
+    Route::get('/daily_temuan/{id}', [DailyTemuanController::class, 'index'])->name('daily_temuan.index');
+    Route::post('/daily_temuan/{id}', [DailyTemuanController::class, 'store'])->name('daily_temuan.store');
+    Route::put('/daily_temuan/{id}', [DailyTemuanController::class, 'update'])->name('daily_temuan.update');
+    Route::delete('/daily_temuan/{id}', [DailyTemuanController::class, 'destroy'])->name('daily_temuan.destroy');
+    Route::put('/daily_temuan/{id}/status', [DailyTemuanController::class, 'updateStatus'])->name('daily_temuan.updateStatus');
+    Route::get('/daily_temuan/export/{id}', [DailyTemuanController::class, 'exportToPPT'])->name('daily_temuan.export');
+    Route::put('/daily_temuan/{id}/rotate', [DailyTemuanController::class, 'updateRotation'])->name('daily_temuan.rotate');
 });
 
 
@@ -131,4 +158,17 @@ Route::middleware(AuthMiddleware::class)->group(function () {
 
     Route::get('/user_nilai/{id}', [UserNilaiController::class, 'index'])->name('user_nilai.index');
     Route::post('/user_nilai/{id}', [UserNilaiController::class, 'store'])->name('user_nilai.store');
+
+    // User Daily Patrol
+    Route::get('/user_daily_patrol', [UserDailyPatrolController::class, 'index'])->name('user_daily_patrol');
+    Route::post('/user_daily_patrol', [UserDailyPatrolController::class, 'create'])->name('user_daily_patrol.create');
+    Route::put('/user_daily_patrol/{id}', [UserDailyPatrolController::class, 'update'])->name('user_daily_patrol.update');
+    Route::delete('/user_daily_patrol/{id}', [UserDailyPatrolController::class, 'destroy'])->name('user_daily_patrol.destroy');
+
+    Route::get('/user_daily_patrol_member/{id}', [UserDailyPatrolMemberController::class, 'index'])->name('user_daily_patrol_member.index');
+
+    Route::get('/user_daily_temuan/{id}', [UserDailyTemuanController::class, 'index'])->name('user_daily_temuan.index');
+    Route::post('/user_daily_temuan/{id}', [UserDailyTemuanController::class, 'store'])->name('user_daily_temuan.store');
+    Route::put('/user_daily_temuan/{id}', [UserDailyTemuanController::class, 'update'])->name('user_daily_temuan.update');
+    Route::delete('/user_daily_temuan/{id}', [UserDailyTemuanController::class, 'destroy'])->name('user_daily_temuan.destroy');
 });

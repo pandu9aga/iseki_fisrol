@@ -69,6 +69,8 @@
             <hr class="sidebar-divider"> --}}
             <li class="nav-item"><a class="nav-link" href="{{ route('user_patrol') }}"><i
                         class="fas fa-fw fa-table"></i><span>Patrol</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ route('user_daily_patrol') }}"><i
+                        class="fas fa-fw fa-calendar-day"></i><span>Daily Patrol</span></a></li>
             <hr class="sidebar-divider my-0">
             {{-- <li class="nav-item"><a class="nav-link" href="{{ route('temuan') }}"><i class="fas fa-fw fa-folder"></i><span>Temuan</span></a></li> --}}
             <li class="nav-item"><a class="nav-link" href="{{ route('logout') }}"><i
