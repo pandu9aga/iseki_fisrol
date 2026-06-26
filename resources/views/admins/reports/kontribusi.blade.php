@@ -12,10 +12,22 @@
 
             <!-- Filter Month & Year -->
             <form method="GET" action="{{ route('admins.reports.kontribusi') }}" class="mb-4">
+                @php
+                    $prevMonth = $month == '01' ? '12' : str_pad($month - 1, 2, '0', STR_PAD_LEFT);
+                    $prevYear  = $month == '01' ? $year - 1 : $year;
+                    $nextMonth = $month == '12' ? '01' : str_pad($month + 1, 2, '0', STR_PAD_LEFT);
+                    $nextYear  = $month == '12' ? $year + 1 : $year;
+                @endphp
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                    <div class="col-auto">
+                        <a href="{{ route('admins.reports.kontribusi', ['month' => $prevMonth, 'year' => $prevYear]) }}"
+                           class="btn btn-sm btn-link text-secondary text-decoration-none px-1" title="Bulan sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
                         <label for="month" class="form-label fw-bold">Bulan</label>
-                        <select name="month" id="month" class="form-select form-control">
+                        <select name="month" id="month" class="form-select form-control form-select-sm">
                             @foreach($months as $key => $name)
                             <option value="{{ $key }}" {{ $month == $key ? 'selected' : '' }}>
                                 {{ $name }}
@@ -23,9 +35,15 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-auto">
+                        <a href="{{ route('admins.reports.kontribusi', ['month' => $nextMonth, 'year' => $nextYear]) }}"
+                           class="btn btn-sm btn-link text-secondary text-decoration-none px-1" title="Bulan berikutnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
                     <div class="col-md-2">
                         <label for="year" class="form-label fw-bold">Tahun</label>
-                        <select name="year" id="year" class="form-select form-control">
+                        <select name="year" id="year" class="form-select form-control form-select-sm">
                             @foreach($years as $y)
                             <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
                                 {{ $y }}
@@ -33,19 +51,11 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary">
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-primary">
                             <i class="fas fa-filter me-1"></i> Filter
                         </button>
                     </div>
-                </div>
-                <div class="mt-3">
-                    <h5 class="text-secondary">
-                        Laporan Periode: <strong>{{ $months[$month] ?? $month }} {{ $year }}</strong>
-                    </h5>
-                    <!-- <small class="text-muted">
-                        *Data dihitung berdasarkan tanggal patroli (Patrol Date)
-                    </small> -->
                 </div>
             </form>
 
